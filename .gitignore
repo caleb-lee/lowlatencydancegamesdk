@@ -1,0 +1,25 @@
+# Build directories
+build/
+cmake-build-*/
+
+# macOS system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Compiled binaries
+pad_test
+*.exe
+*.out
+*.app
