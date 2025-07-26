@@ -11,6 +11,7 @@ struct LowLatencyDanceGameSDK::DanceGameDevice {
 };
 
 LowLatencyDanceGameSDK::LowLatencyDanceGameSDK(uint16_t vendor_id, uint16_t product_id) {
+    m_device = new DanceGameDevice();
     m_isValid = false;
     m_device->is_initialized = false;
 
@@ -140,6 +141,8 @@ LowLatencyDanceGameSDK::~LowLatencyDanceGameSDK() {
         libusb_close(m_device->handle);
         libusb_exit(m_device->ctx);
     }
+
+    delete m_device;
 }
 
 bool LowLatencyDanceGameSDK::is_valid() const {
