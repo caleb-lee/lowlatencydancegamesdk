@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Add libusb from extern directory
-add_subdirectory(extern/libusb)
+add_subdirectory(extern/libusb EXCLUDE_FROM_ALL)
 
 # Create library
 add_library(lowlatencydancegamesdk STATIC src/lowlatencydancegamesdk.cpp)
