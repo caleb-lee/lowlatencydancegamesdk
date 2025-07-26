@@ -15,6 +15,7 @@ ExternalProject_Add(
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
     BUILD_BYPRODUCTS 
         ${CMAKE_CURRENT_BINARY_DIR}/libusb_install/lib/libusb-1.0.a
         ${CMAKE_CURRENT_BINARY_DIR}/libusb_install/lib/usb-1.0.lib
