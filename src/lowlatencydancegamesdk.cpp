@@ -157,7 +157,7 @@ int LowLatencyDanceGameSDK::read_data(uint8_t* buffer, int expectedCount) {
         buffer,
         expectedCount,
         &bytes_read,
-        0); // never time out
+        1000); // milliseconds: Timeout once per second to allow for run loop to interate if the device doesn't initialize correctly
 
     if (result < 0) {
         return result;
