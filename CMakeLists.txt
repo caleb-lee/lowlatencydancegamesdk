@@ -12,9 +12,6 @@ if(DEFINED LIBUSB_INCLUDE_DIR AND DEFINED LIBUSB_LIBRARY)
     # Create library
     add_library(lowlatencydancegamesdk STATIC src/lowlatencydancegamesdk.cpp)
     
-    # Link to external libusb
-    target_link_libraries(lowlatencydancegamesdk PRIVATE ${LIBUSB_LIBRARY})
-    
     # Include external libusb headers
     target_include_directories(lowlatencydancegamesdk PRIVATE ${LIBUSB_INCLUDE_DIR})
 else()
