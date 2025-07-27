@@ -19,6 +19,11 @@ target_include_directories(lowlatencydancegamesdk PRIVATE extern/libusb/libusb/l
 # Make headers available to users of the library
 target_include_directories(lowlatencydancegamesdk PUBLIC include)
 
+if(WIN32)
+  target_compile_definitions(lowlatencydancegamesdk PRIVATE 
+    $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS=1>)
+endif()
+
 # Install commands
 install(TARGETS lowlatencydancegamesdk
        ARCHIVE DESTINATION lib
