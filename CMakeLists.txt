@@ -4,10 +4,6 @@ project(lowlatencydancegamesdk)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")
-endif()
-
 # Add libusb from extern directory
 add_subdirectory(extern/libusb)
 
@@ -22,3 +18,13 @@ target_include_directories(lowlatencydancegamesdk PRIVATE extern/libusb/libusb/l
 
 # Make headers available to users of the library
 target_include_directories(lowlatencydancegamesdk PUBLIC include)
+
+# Install commands
+install(TARGETS lowlatencydancegamesdk
+       ARCHIVE DESTINATION lib
+       LIBRARY DESTINATION lib
+       RUNTIME DESTINATION bin)
+
+install(DIRECTORY include/ 
+       DESTINATION include
+       FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
