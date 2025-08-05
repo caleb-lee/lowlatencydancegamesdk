@@ -169,41 +169,64 @@ LowLatencyDanceGameSDK** LowLatencyDanceGameSDK::discover_devices() {
             continue;
         }
         
-        if (desc.idVendor == SMX_VENDOR_ID && desc.idProduct == SMX_PRODUCT_ID) {
-            libusb_device_handle *handle;
-            if (libusb_open(device_list[i], &handle) < 0) {
-                continue;
-            }
-            
-            // Create new instance
-            LowLatencyDanceGameSDK* instance = new LowLatencyDanceGameSDK();
-            instance->m_device = new DanceGameDevice();
-            instance->m_isValid = false;
-            instance->m_playerNumber = 0;
-            
-            if (setup_device_from_handle(handle, instance->m_device)) {
-                // Determine player number via vendor protocol
-                int player = get_player_number_from_device(handle, 
-                                                         instance->m_device->interrupt_in_endpoint,
-                                                         instance->m_device->interrupt_out_endpoint);
-                
-                instance->m_playerNumber = player;
-                instance->m_isValid = true;
-                
-                // Place in correct array slot
-                if (player >= 0 && player < MAX_PADS && result[player] == nullptr) {
-                    result[player] = instance;
-                    found_devices++;
-                } else {
-                    // Duplicate or invalid player number, clean up
-                    delete instance;
-                    libusb_close(handle);
-                }
-            } else {
-                delete instance;
-                libusb_close(handle);
-            }
+        // Skip non-SMX devices
+        if (desc.idVendor != SMX_VENDOR_ID || desc.idProduct != SMX_PRODUCT_ID) {
+            continue;
         }
+        
+        // Try to open the device
+        libusb_device_handle *handle;
+        if (libusb_open(device_list[i], &handle) < 0) {
+            continue;
+        }
+        
+        // Create new instance
+        LowLatencyDanceGameSDK* instance = new LowLatencyDanceGameSDK();
+        instance->m_device = new DanceGameDevice();
+        instance->m_isValid = false;
+        instance->m_playerNumber = 0;
+        
+        // Try to set up the device
+        if (!setup_device_from_handle(handle, instance->m_device)) {
+            delete instance;
+            libusb_close(handle);
+            continue;
+        }
+        
+        // Determine player number via vendor protocol
+        int player = get_player_number_from_device(handle, 
+                                                 instance->m_device->interrupt_in_endpoint,
+                                                 instance->m_device->interrupt_out_endpoint);
+        
+        instance->m_playerNumber = player;
+        instance->m_isValid = true;
+        
+        // Handle invalid player numbers
+        if (player < 0 || player >= MAX_PADS) {
+            delete instance;
+            libusb_close(handle);
+            continue;
+        }
+        
+        // Try preferred slot first
+        if (result[player] == nullptr) {
+            result[player] = instance;
+            found_devices++;
+            continue;
+        }
+        
+        // Preferred slot taken, try fallback slot
+        int fallback_slot = (player == 0) ? 1 : 0;
+        if (result[fallback_slot] == nullptr) {
+            result[fallback_slot] = instance;
+            found_devices++;
+            continue;
+        }
+        
+        // Both slots full, clean up and stop looking
+        delete instance;
+        libusb_close(handle);
+        break;
     }
     
     libusb_free_device_list(device_list, 1);
