@@ -17,7 +17,7 @@ struct DeviceState {
     bool connected = false;
     uint16_t last_button_state = 0;
     unsigned char buffer[65];
-    Player player;
+    LowLatencyDanceGameSDK::Player player;
     void* impl;
 };
 
@@ -28,7 +28,7 @@ struct LowLatencyDanceGameSDK::Impl {
     std::atomic<bool> shutdown{false};
     std::unique_ptr<std::thread> usbThread;
 
-    static void transferCallback(libusb_transfer* transfer) {
+    static void LIBUSB_CALL transferCallback(libusb_transfer* transfer) {
         DeviceState* device = static_cast<DeviceState*>(transfer->user_data);
         static_cast<Impl*>(device->impl)->handleTransferComplete(transfer);
     }
@@ -65,7 +65,7 @@ struct LowLatencyDanceGameSDK::Impl {
         libusb_submit_transfer(transfer);
     }
 
-    Player getPlayerNumberFromDevice(libusb_device_handle* handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint) {
+    LowLatencyDanceGameSDK::Player getPlayerNumberFromDevice(libusb_device_handle* handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint) {
         const unsigned char data[] = { 5, 0x80, 0 };
         int bytes_sent = 0;
         
