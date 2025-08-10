@@ -255,8 +255,7 @@ struct LowLatencyDanceGameSDK::Impl {
 
     void usbEventLoop() {
         while (!shutdown) {
-            struct timeval tv = {0, 100000};
-            libusb_handle_events_timeout(g_libusb_ctx, &tv);
+            libusb_handle_events(g_libusb_ctx);
         }
     }
 };
