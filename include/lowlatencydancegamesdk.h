@@ -2,35 +2,40 @@
 #define LOWLATENCYDANCEGAMESDK_H
 
 #include <cstdint>
+#include <functional>
+#include <memory>
+#include <thread>
+#include <atomic>
+
+enum class Player {
+    P1 = 0,
+    P2,
+    PLAYER_COUNT
+};
+
+static constexpr int MAX_PLAYERS = static_cast<int>(Player::PLAYER_COUNT);
+
+using InputCallback = std::function<void(Player player, uint16_t button_state)>;
 
 class LowLatencyDanceGameSDK {
 public:
-    static constexpr int MAX_PADS = 2;
+    static LowLatencyDanceGameSDK& getInstance();
     
-    // Static device management - abstracts all USB details
-    static bool initialize();    // Sets up device discovery system
-    static void shutdown();
-    static LowLatencyDanceGameSDK** discover_devices(); // Returns array[MAX_PADS]: [P1, P2], NULL for missing pads
-
-    // Instance methods
-    bool is_valid() const;
-    int get_player_number() const; // 0 or 1 (P1 or P2), matches array index
-    int read_data(uint8_t* buffer, int expectedCount);
+    bool initialize(InputCallback callback);
+    void shutdown();
     
-    ~LowLatencyDanceGameSDK();
-
+    bool isPlayerConnected(Player player);
+    uint16_t getPlayerButtonState(Player player);
+    
 private:
-    struct DanceGameDevice;
-    DanceGameDevice *m_device;
-    bool m_isValid;
-    int m_playerNumber; // 0 or 1
-    
-    // Private constructor - only static methods create instances
     LowLatencyDanceGameSDK();
+    ~LowLatencyDanceGameSDK();
     
-    // Helper methods for device setup
-    static bool setup_device_from_handle(void* handle, DanceGameDevice* device);
-    static int get_player_number_from_device(void* handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint);
+    struct Impl;
+    std::unique_ptr<Impl> pImpl;
+    
+    LowLatencyDanceGameSDK(const LowLatencyDanceGameSDK&) = delete;
+    LowLatencyDanceGameSDK& operator=(const LowLatencyDanceGameSDK&) = delete;
 };
 
 #endif
