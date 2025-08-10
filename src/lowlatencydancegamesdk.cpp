@@ -47,7 +47,7 @@ struct LowLatencyDanceGameSDK::Impl {
         }
         
         // Successful transfer, but no new data. Submit new transfer and end.
-        if (transfer->status != LIBUSB_TRANSFER_COMPLETED || transfer->actual_length < 3) {
+        if (transfer->actual_length < 3) {
             libusb_submit_transfer(transfer);
             return;
         }
