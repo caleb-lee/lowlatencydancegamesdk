@@ -1,5 +1,7 @@
 #include "lowlatencydancegamesdk.h"
 #include <libusb.h>
+#include <thread>
+#include <atomic>
 
 // SMX vendor/product IDs
 static constexpr uint16_t SMX_VENDOR_ID = 0x2341;
@@ -15,7 +17,8 @@ struct DeviceState {
     uint8_t interrupt_out_endpoint = 0;
     uint8_t hid_interface = 0;
     bool connected = false;
-    uint16_t last_button_state = 0;
+    uint16_t nonatomic_last_button_state = 0;
+    std::atomic<uint16_t> last_button_state{0};
     unsigned char buffer[65];
     LowLatencyDanceGameSDK::Player player;
     void* impl;
@@ -34,33 +37,33 @@ struct LowLatencyDanceGameSDK::Impl {
     }
 
     void handleTransferComplete(libusb_transfer* transfer) {
-        DeviceState* device = static_cast<DeviceState*>(transfer->user_data);
-        
-        if (shutdown) {
-            return;
-        }
+        DeviceState *device = static_cast<DeviceState *>(transfer->user_data);
 
         // Got an error; disconnect device and return without submitting another transfer
         if (transfer->status != LIBUSB_TRANSFER_COMPLETED && transfer->status != LIBUSB_TRANSFER_TIMED_OUT) {
             device->connected = false;
             return;
         }
-        
-        // Successful transfer, but no new data. Submit new transfer and end.
-        if (transfer->actual_length < 3) {
-            libusb_submit_transfer(transfer);
+
+        // Input must be at least 3 bytes long
+        if (transfer->actual_length >= 3) {
+            // Parse out the input
+            uint16_t new_state = ((device->buffer[2] & 0xFF) << 8) | ((device->buffer[1] & 0xFF) << 0);
+
+            // If the input state is different from the last input state we received, call the callback
+            if (new_state != device->nonatomic_last_button_state) {
+                device->last_button_state = new_state;
+                if (inputCallback) {
+                    inputCallback(device->player, new_state);
+                }
+                device->nonatomic_last_button_state = new_state;
+            }
+        }
+
+        if (shutdown) {
             return;
         }
 
-        // If the input state is different from the last input state we received, call the callback
-        uint16_t new_state = ((device->buffer[2] & 0xFF) << 8) | ((device->buffer[1] & 0xFF) << 0);
-        if (new_state != device->last_button_state) {
-            device->last_button_state = new_state;
-            if (inputCallback) {
-                inputCallback(device->player, new_state);
-            }
-        }
-        
         // If we reach this point, immediately submit a new transfer
         libusb_submit_transfer(transfer);
     }
@@ -254,8 +257,9 @@ struct LowLatencyDanceGameSDK::Impl {
     }
 
     void usbEventLoop() {
+        int completed = 0;
         while (!shutdown) {
-            libusb_handle_events(g_libusb_ctx);
+            libusb_handle_events_completed(g_libusb_ctx, &completed);
         }
     }
 };
