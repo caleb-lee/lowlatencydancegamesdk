@@ -2,6 +2,11 @@
 #include <libusb.h>
 #include <thread>
 #include <atomic>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
 
 // SMX vendor/product IDs
 static constexpr uint16_t SMX_VENDOR_ID = 0x2341;
@@ -9,6 +14,17 @@ static constexpr uint16_t SMX_PRODUCT_ID = 0x8037;
 
 // Global libusb context for device management
 static libusb_context* g_libusb_ctx = nullptr;
+
+// Set current thread to high priority for low latency
+static void setThreadHighPriority() {
+#ifdef _WIN32
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+#else // Linux and Mac
+    struct sched_param param;
+    param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
+#endif
+}
 
 struct DeviceState {
     libusb_device_handle* handle = nullptr;
@@ -257,6 +273,7 @@ struct LowLatencyDanceGameSDK::Impl {
     }
 
     void usbEventLoop() {
+        setThreadHighPriority();
         int completed = 0;
         while (!shutdown) {
             libusb_handle_events_completed(g_libusb_ctx, &completed);
