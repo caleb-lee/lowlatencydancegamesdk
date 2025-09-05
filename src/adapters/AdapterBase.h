@@ -2,14 +2,19 @@
 #define DANCEPADADAPTERBASE_H
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <libusb.h>
+
+typedef enum {
+    DancePadAdapterPlayerUnknown = -1,
+    DancePadAdapterPlayer1       = 0,
+    DancePadAdapterPlayer2,
+} DancePadAdapterPlayerEnum; typedef int DancePadAdapterPlayer;
 
 struct DancePadAdapter {
     uint16_t vendor_id;
     uint16_t product_id;
     uint16_t (*input_converter)(uint8_t[], int);
-    bool (*is_p2)(libusb_device_handle*, uint8_t, uint8_t); // Optional; please set to `NULL` if pad has no logic for P1/P2
+    DancePadAdapterPlayer (*get_player)(libusb_device_handle*, uint8_t, uint8_t);
 };
 
 typedef enum {

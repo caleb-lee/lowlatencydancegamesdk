@@ -85,14 +85,6 @@ struct LowLatencyDanceGameSDK::Impl {
         libusb_submit_transfer(transfer);
     }
 
-    LowLatencyDanceGameSDK::Player getPlayerNumberFromDevice(libusb_device_handle* handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint) {
-        if (s_default_adapter.is_p2 == nullptr) {
-            return Player::P1; // When there's no logic, just give P1
-        }
-
-        return s_default_adapter.is_p2(handle, interrupt_in_endpoint, interrupt_out_endpoint) ? Player::P2 : Player::P1;
-    }
-
     bool setupDevice(libusb_device_handle* handle, DeviceState* device) {
         struct libusb_config_descriptor *config;
         libusb_get_active_config_descriptor(libusb_get_device(handle), &config);
@@ -154,7 +146,14 @@ struct LowLatencyDanceGameSDK::Impl {
         device->interrupt_in_endpoint = interrupt_in_endpoint;
         device->interrupt_out_endpoint = interrupt_out_endpoint;
         device->hid_interface = hid_interface;
-        device->player = getPlayerNumberFromDevice(handle, interrupt_in_endpoint, interrupt_out_endpoint);
+        DancePadAdapterPlayer player = s_default_adapter.get_player(handle, interrupt_in_endpoint, interrupt_out_endpoint);
+        if (player != DancePadAdapterPlayerUnknown) {
+            device->player = static_cast<Player>(player);
+        }
+        else {
+            //TODO: handle unknown players gracefully
+            device->player = Player::P1;
+        }
         device->connected = true;
         device->impl = this;
         

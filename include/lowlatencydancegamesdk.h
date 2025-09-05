@@ -10,12 +10,11 @@ public:
     enum class Player {
         P1 = 0,
         P2,
-        PLAYER_COUNT
     };
     
     using InputCallback = std::function<void(Player player, uint16_t button_state)>;
     
-    static constexpr int MAX_PLAYERS = static_cast<int>(Player::PLAYER_COUNT);
+    static constexpr int MAX_PLAYERS = 2;
     static LowLatencyDanceGameSDK& getInstance();
     
     bool initialize(InputCallback callback);

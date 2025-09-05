@@ -1,6 +1,6 @@
 #include "FoamPadAdapter.h"
 
-uint16_t input_response_converter(uint8_t data[], int length) {
+uint16_t input_converter(uint8_t data[], int length) {
     if (length < 7) {
         return 0;
     }
@@ -28,13 +28,18 @@ uint16_t input_response_converter(uint8_t data[], int length) {
     return (uint16_t)result;
 }
 
+DancePadAdapterPlayer get_player(libusb_device_handle *handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint) {
+    // This foam pad doesn't have an in-built concept of P1/P2, so send back "unknown"
+    return DancePadAdapterPlayerUnknown;
+}
+
 extern struct DancePadAdapter default_foam_pad_adapter() {
     struct DancePadAdapter adapter;
 
-    adapter.vendor_id = 0x2341; //TODO: Update
-    adapter.product_id = 0x8037; //TODO: Update
-    adapter.input_converter = input_response_converter;
-    adapter.is_p2 = NULL;
+    adapter.vendor_id = 0x0079;
+    adapter.product_id = 0x0011;
+    adapter.input_converter = input_converter;
+    adapter.get_player = get_player;
 
     return adapter;
 }
