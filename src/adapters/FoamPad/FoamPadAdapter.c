@@ -34,6 +34,7 @@ extern struct DancePadAdapter default_foam_pad_adapter() {
     adapter.vendor_id = 0x2341; //TODO: Update
     adapter.product_id = 0x8037; //TODO: Update
     adapter.input_converter = input_response_converter;
+    adapter.is_p2 = NULL;
 
     return adapter;
 }

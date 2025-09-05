@@ -86,30 +86,11 @@ struct LowLatencyDanceGameSDK::Impl {
     }
 
     LowLatencyDanceGameSDK::Player getPlayerNumberFromDevice(libusb_device_handle* handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint) {
-        if (interrupt_out_endpoint == 0) {
-            return Player::P1;
+        if (s_default_adapter.is_p2 == nullptr) {
+            return Player::P1; // When there's no logic, just give P1
         }
 
-        const unsigned char data[] = { 5, 0x80, 0 };
-        int bytes_sent = 0;
-        int result = libusb_interrupt_transfer(handle, interrupt_out_endpoint, 
-                                                (unsigned char*)data, sizeof(data), 
-                                                &bytes_sent, 1000);
-        if (result < 0 || bytes_sent < sizeof(data)) {
-            return Player::P1;
-        }
-        
-        unsigned char buf[65];
-        int bytes_read = 0;
-        result = libusb_interrupt_transfer(handle, interrupt_in_endpoint,
-                                            buf, sizeof(buf), 
-                                            &bytes_read, 1000);
-        
-        if (result < 0 || bytes_read < 4) {
-            return Player::P1;
-        }
-        
-        return (buf[3] == '1') ? Player::P2 : Player::P1;
+        return s_default_adapter.is_p2(handle, interrupt_in_endpoint, interrupt_out_endpoint) ? Player::P2 : Player::P1;
     }
 
     bool setupDevice(libusb_device_handle* handle, DeviceState* device) {
