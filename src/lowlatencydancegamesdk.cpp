@@ -11,9 +11,10 @@
 // Adapters
 #include "adapters/AdapterBase.h"
 #include "adapters/SMXStage/SMXStageAdapter.h"
+#include "adapters/FoamPad/FoamPadAdapter.h"
 
-// SMX Adapter
-static struct DancePadAdapter s_smx_adapter = default_smx_adapter();
+// Set Controller Adapter
+static struct DancePadAdapter s_default_adapter = default_smx_adapter();
 
 // Global libusb context for device management
 static libusb_context* g_libusb_ctx = nullptr;
@@ -65,7 +66,7 @@ struct LowLatencyDanceGameSDK::Impl {
         }
 
         // Parse out the input
-        uint16_t new_state = s_smx_adapter.input_converter(device->buffer, transfer->actual_length);
+        uint16_t new_state = s_default_adapter.input_converter(device->buffer, transfer->actual_length);
 
         // If the input state is different from the last input state we received, call the callback
         if (new_state != device->nonatomic_last_button_state) {
@@ -85,23 +86,24 @@ struct LowLatencyDanceGameSDK::Impl {
     }
 
     LowLatencyDanceGameSDK::Player getPlayerNumberFromDevice(libusb_device_handle* handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint) {
+        if (interrupt_out_endpoint == 0) {
+            return Player::P1;
+        }
+
         const unsigned char data[] = { 5, 0x80, 0 };
         int bytes_sent = 0;
-        
-        if (interrupt_out_endpoint != 0) {
-            int result = libusb_interrupt_transfer(handle, interrupt_out_endpoint, 
-                                                   (unsigned char*)data, sizeof(data), 
-                                                   &bytes_sent, 1000);
-            if (result < 0) {
-                return Player::P1;
-            }
+        int result = libusb_interrupt_transfer(handle, interrupt_out_endpoint, 
+                                                (unsigned char*)data, sizeof(data), 
+                                                &bytes_sent, 1000);
+        if (result < 0 || bytes_sent < sizeof(data)) {
+            return Player::P1;
         }
         
         unsigned char buf[65];
         int bytes_read = 0;
-        int result = libusb_interrupt_transfer(handle, interrupt_in_endpoint,
-                                               buf, sizeof(buf), 
-                                               &bytes_read, 1000);
+        result = libusb_interrupt_transfer(handle, interrupt_in_endpoint,
+                                            buf, sizeof(buf), 
+                                            &bytes_read, 1000);
         
         if (result < 0 || bytes_read < 4) {
             return Player::P1;
@@ -218,7 +220,7 @@ struct LowLatencyDanceGameSDK::Impl {
                 continue;
             }
             
-            if (desc.idVendor != s_smx_adapter.vendor_id || desc.idProduct != s_smx_adapter.product_id) {
+            if (desc.idVendor != s_default_adapter.vendor_id || desc.idProduct != s_default_adapter.product_id) {
                 continue;
             }
             

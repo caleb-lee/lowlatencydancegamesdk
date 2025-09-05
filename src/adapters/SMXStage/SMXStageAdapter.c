@@ -1,6 +1,6 @@
 #include "SMXStageAdapter.h"
 
-uint16_t smx_input_response_converter(uint8_t data[], int length) {
+uint16_t input_response_converter(uint8_t data[], int length) {
     if (length < 3) {
         return 0;
     }
@@ -13,7 +13,7 @@ extern struct DancePadAdapter default_smx_adapter() {
 
     adapter.vendor_id = 0x2341;
     adapter.product_id = 0x8037;
-    adapter.input_converter = smx_input_response_converter;
+    adapter.input_converter = input_response_converter;
 
     return adapter;
 }
