@@ -10,7 +10,9 @@ if(DEFINED LIBUSB_INCLUDE_DIR AND DEFINED LIBUSB_LIBRARY)
     message(STATUS "Using external libusb: ${LIBUSB_LIBRARY}")
     
     # Create library
-    add_library(lowlatencydancegamesdk STATIC src/lowlatencydancegamesdk.cpp)
+    add_library(lowlatencydancegamesdk STATIC 
+        src/lowlatencydancegamesdk.cpp
+        src/adapters/SMXStage/SMXStageAdapter.c)
     
     # Include external libusb headers
     target_include_directories(lowlatencydancegamesdk PRIVATE ${LIBUSB_INCLUDE_DIR})
@@ -22,7 +24,9 @@ else()
     add_subdirectory(extern/libusb)
     
     # Create library
-    add_library(lowlatencydancegamesdk STATIC src/lowlatencydancegamesdk.cpp)
+    add_library(lowlatencydancegamesdk STATIC 
+        src/lowlatencydancegamesdk.cpp
+        src/adapters/SMXStage/SMXStageAdapter.c)
     
     # Link libusb
     target_link_libraries(lowlatencydancegamesdk PRIVATE usb-1.0)

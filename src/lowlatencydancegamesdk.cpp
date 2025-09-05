@@ -8,9 +8,12 @@
 #include <pthread.h>
 #endif
 
-// SMX vendor/product IDs
-static constexpr uint16_t SMX_VENDOR_ID = 0x2341;
-static constexpr uint16_t SMX_PRODUCT_ID = 0x8037;
+// Adapters
+#include "adapters/AdapterBase.h"
+#include "adapters/SMXStage/SMXStageAdapter.h"
+
+// SMX Adapter
+static struct DancePadAdapter s_smx_adapter = default_smx_adapter();
 
 // Global libusb context for device management
 static libusb_context* g_libusb_ctx = nullptr;
@@ -61,19 +64,16 @@ struct LowLatencyDanceGameSDK::Impl {
             return;
         }
 
-        // Input must be at least 3 bytes long
-        if (transfer->actual_length >= 3) {
-            // Parse out the input
-            uint16_t new_state = ((device->buffer[2] & 0xFF) << 8) | ((device->buffer[1] & 0xFF) << 0);
+        // Parse out the input
+        uint16_t new_state = s_smx_adapter.input_converter(device->buffer, transfer->actual_length);
 
-            // If the input state is different from the last input state we received, call the callback
-            if (new_state != device->nonatomic_last_button_state) {
-                device->last_button_state = new_state;
-                if (inputCallback) {
-                    inputCallback(device->player, new_state);
-                }
-                device->nonatomic_last_button_state = new_state;
+        // If the input state is different from the last input state we received, call the callback
+        if (new_state != device->nonatomic_last_button_state) {
+            device->last_button_state = new_state;
+            if (inputCallback) {
+                inputCallback(device->player, new_state);
             }
+            device->nonatomic_last_button_state = new_state;
         }
 
         if (shutdown) {
@@ -218,7 +218,7 @@ struct LowLatencyDanceGameSDK::Impl {
                 continue;
             }
             
-            if (desc.idVendor != SMX_VENDOR_ID || desc.idProduct != SMX_PRODUCT_ID) {
+            if (desc.idVendor != s_smx_adapter.vendor_id || desc.idProduct != s_smx_adapter.product_id) {
                 continue;
             }
             
