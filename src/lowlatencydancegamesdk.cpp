@@ -232,63 +232,36 @@ struct LowLatencyDanceGameSDK::Impl {
                 continue;
             }
             
-            // Try to place device based on its preference
-            bool device_placed = false;
-            
-            if (device_state->player == DancePadAdapterPlayerUnknown) {
-                // Unknown device - place in first available slot
-                for (int slot = 0; slot < MAX_PLAYERS && !device_placed; slot++) {
-                    if (!devices[slot]) {
-                        devices[slot] = device_state;
-                        device_placed = true;
-                    }
-                }
+            // Just place devices in order found - will sort later if needed
+            if (found_devices < MAX_PLAYERS) {
+                devices[found_devices] = device_state;
+                found_devices++;
             } else {
-                // Known device - try preferred slot first
-                int preferred_slot = static_cast<int>(device_state->player);
-                
-                if (!devices[preferred_slot]) {
-                    // Preferred slot is free
-                    devices[preferred_slot] = device_state;
-                    device_placed = true;
-                    found_devices++;
-                } else if (devices[preferred_slot]->player == DancePadAdapterPlayerUnknown) {
-                    // Preferred slot has unknown device - move unknown to other slot
-                    int other_slot = (preferred_slot == 0) ? 1 : 0;
-                    if (!devices[other_slot]) {
-                        devices[other_slot] = devices[preferred_slot];
-                        devices[preferred_slot] = device_state;
-                        device_placed = true;
-                        found_devices++;
-                    }
-                } else {
-                    // Preferred slot has another known device - try other slot
-                    int fallback_slot = (preferred_slot == 0) ? 1 : 0;
-                    if (!devices[fallback_slot]) {
-                        device_state->player = static_cast<DancePadAdapterPlayer>(fallback_slot);
-                        devices[fallback_slot] = device_state;
-                        device_placed = true;
-                        found_devices++;
-                    }
-                }
-            }
-            
-            if (!device_placed) {
                 delete device_state;
                 libusb_close(handle);
             }
         }
         
-        // If both devices are unknown, sort by USB port
-        if (devices[0] && devices[1] && 
-            devices[0]->player == DancePadAdapterPlayerUnknown &&
-            devices[1]->player == DancePadAdapterPlayerUnknown) {
+        // Sort devices: if either is unknown, use USB port order; otherwise use preferences
+        if (devices[0] && devices[1]) {
+            bool has_unknown = (devices[0]->player == DancePadAdapterPlayerUnknown || 
+                               devices[1]->player == DancePadAdapterPlayerUnknown);
             
-            // If devices[0] should come after devices[1] in USB ordering, swap them
-            if (!compareUSBLocation(devices[0]->device, devices[1]->device)) {
-                DeviceState* temp = devices[0];
-                devices[0] = devices[1];
-                devices[1] = temp;
+            if (has_unknown) {
+                // Use USB port ordering
+                if (!compareUSBLocation(devices[0]->device, devices[1]->device)) {
+                    DeviceState* temp = devices[0];
+                    devices[0] = devices[1];
+                    devices[1] = temp;
+                }
+            } else {
+                // Both have preferences - honor them with conflict resolution
+                if (devices[0]->player == DancePadAdapterPlayer2 && devices[1]->player == DancePadAdapterPlayer1) {
+                    DeviceState* temp = devices[0];
+                    devices[0] = devices[1];
+                    devices[1] = temp;
+                }
+                // If both want same slot, first found wins (no swap needed)
             }
         }
         
