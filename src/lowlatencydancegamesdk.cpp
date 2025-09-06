@@ -239,8 +239,17 @@ struct LowLatencyDanceGameSDK::Impl {
             }
         }
         
-        // Sort devices: if either is unknown, use USB port order; otherwise use preferences
-        if (devices[0] && devices[1]) {
+        // Handle single device case first
+        if (found_devices == 1) {
+            DeviceState* single_device = devices[0];
+            if (single_device->player == DancePadAdapterPlayer2) {
+                // Move P2 preference to correct slot
+                devices[1] = single_device;
+                devices[0] = nullptr;
+            }
+            // If P1 or Unknown, leave at slot 0
+        } else if (devices[0] && devices[1]) {
+            // Sort devices: if either is unknown, use USB port order; otherwise use preferences
             bool has_unknown = (devices[0]->player == DancePadAdapterPlayerUnknown || 
                                devices[1]->player == DancePadAdapterPlayerUnknown);
             
@@ -267,7 +276,6 @@ struct LowLatencyDanceGameSDK::Impl {
             if (devices[i]) {
                 devices[i]->player = static_cast<DancePadAdapterPlayer>(i);
                 devices[i]->device = nullptr;  // Invalidate after use
-                found_devices++;
             }
         }
         
