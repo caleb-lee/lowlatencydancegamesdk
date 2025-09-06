@@ -9,7 +9,9 @@
 #include <pthread.h>
 #endif
 
-#include "adapters/AdapterBase.h"
+extern "C" {
+    #include "adapters/AdapterBase.h"
+}
 
 // Global libusb context for device management
 static libusb_context* g_libusb_ctx = nullptr;
@@ -35,7 +37,8 @@ static bool compareUSBLocation(libusb_device* device_a, libusb_device* device_b)
     int len_a = libusb_get_port_numbers(device_a, path_a, sizeof(path_a));
     int len_b = libusb_get_port_numbers(device_b, path_b, sizeof(path_b));
     
-    for (int i = 0; i < std::min(len_a, len_b); i++) {
+    int min_len = (len_a < len_b) ? len_a : len_b;
+    for (int i = 0; i < min_len; i++) {
         if (path_a[i] != path_b[i]) return path_a[i] < path_b[i];
     }
     return len_a < len_b;

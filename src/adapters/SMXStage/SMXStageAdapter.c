@@ -3,7 +3,7 @@
 static const uint16_t k_vendor_id  = 0x2341;
 static const uint16_t k_product_id = 0x8037;
 
-uint16_t input_converter(uint8_t data[], int length) {
+uint16_t smx_input_converter(uint8_t data[], int length) {
     if (length < 3) {
         return 0;
     }
@@ -11,7 +11,7 @@ uint16_t input_converter(uint8_t data[], int length) {
     return ((data[2] & 0xFF) << 8) | ((data[1] & 0xFF) << 0);
 }
 
-DancePadAdapterPlayer get_player(libusb_device_handle *handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint)
+DancePadAdapterPlayer smx_get_player(libusb_device_handle *handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint)
 {
     if (interrupt_out_endpoint == 0)
     {
@@ -47,8 +47,8 @@ extern struct DancePadAdapter default_smx_adapter() {
 
     adapter.vendor_id = k_vendor_id;
     adapter.product_id = k_product_id;
-    adapter.input_converter = input_converter;
-    adapter.get_player = get_player;
+    adapter.input_converter = smx_input_converter;
+    adapter.get_player = smx_get_player;
     adapter.is_valid = true;
 
     return adapter;

@@ -1,5 +1,8 @@
 #ifndef DANCEPADADAPTERBASE_H
 #define DANCEPADADAPTERBASE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -45,4 +48,7 @@ typedef enum {
 struct DancePadAdapter dance_pad_adapter_for(uint16_t vendor_id, uint16_t product_id);
 bool dance_pad_is_pid_vid_valid_pad(uint16_t vendor_id, uint16_t product_id);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
