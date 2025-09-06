@@ -16,6 +16,8 @@ public:
     
     static constexpr int MAX_PLAYERS = 2;
     static LowLatencyDanceGameSDK& getInstance();
+
+    static bool isPadCompatible(uint16_t vendor_id, uint16_t product_id);
     
     bool initialize(InputCallback callback);
     void shutdown();

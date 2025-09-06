@@ -381,3 +381,7 @@ uint16_t LowLatencyDanceGameSDK::getPlayerButtonState(Player player) {
     }
     return pImpl->devices[idx]->last_button_state;
 }
+
+bool LowLatencyDanceGameSDK::isPadCompatible(uint16_t vendor_id, uint16_t product_id) {
+    return dance_pad_is_pid_vid_valid_pad(vendor_id, product_id);
+}
