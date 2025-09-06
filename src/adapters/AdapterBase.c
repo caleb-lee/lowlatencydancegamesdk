@@ -11,7 +11,7 @@ extern struct DancePadAdapter dance_pad_adapter_for(uint16_t vendor_id, uint16_t
         adapters_initialized = true;
     }
     
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < sizeof(adapters); i++) {
         if (vendor_id == adapters[i].vendor_id && product_id == adapters[i].product_id) {
             return adapters[i];
         }
