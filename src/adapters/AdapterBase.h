@@ -2,6 +2,7 @@
 #define DANCEPADADAPTERBASE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <libusb.h>
 
 typedef enum {
@@ -11,6 +12,7 @@ typedef enum {
 } DancePadAdapterPlayerEnum; typedef int DancePadAdapterPlayer;
 
 struct DancePadAdapter {
+    bool is_valid;
     uint16_t vendor_id;
     uint16_t product_id;
     uint16_t (*input_converter)(uint8_t[], int);
@@ -39,5 +41,8 @@ typedef enum {
     DancePadAdapterInputNone = 0,
     DancePadAdapterInputSMXDLLMask = 0b0000000111111111,
 } DancePadAdapterInputEnum; typedef uint16_t DancePadAdapterInput;
+
+struct DancePadAdapter dance_pad_adapter_for(uint16_t vendor_id, uint16_t product_id);
+bool dance_pad_is_pid_vid_valid_pad(uint16_t vendor_id, uint16_t product_id);
 
 #endif

@@ -12,6 +12,7 @@ if(DEFINED LIBUSB_INCLUDE_DIR AND DEFINED LIBUSB_LIBRARY)
     # Create library
     add_library(lowlatencydancegamesdk STATIC 
         src/lowlatencydancegamesdk.cpp
+        src/adapters/AdapterBase.c
         src/adapters/SMXStage/SMXStageAdapter.c
         src/adapters/FoamPad/FoamPadAdapter.c)
     
@@ -27,6 +28,7 @@ else()
     # Create library
     add_library(lowlatencydancegamesdk STATIC 
         src/lowlatencydancegamesdk.cpp
+        src/adapters/AdapterBase.c
         src/adapters/SMXStage/SMXStageAdapter.c
         src/adapters/FoamPad/FoamPadAdapter.c)
     

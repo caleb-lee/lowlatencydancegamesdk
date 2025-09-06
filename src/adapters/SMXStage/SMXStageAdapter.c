@@ -46,6 +46,7 @@ extern struct DancePadAdapter default_smx_adapter() {
     adapter.product_id = 0x8037;
     adapter.input_converter = input_converter;
     adapter.get_player = get_player;
+    adapter.is_valid = true;
 
     return adapter;
 }
