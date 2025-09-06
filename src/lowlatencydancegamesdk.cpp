@@ -63,6 +63,7 @@ struct DeviceState {
 struct LowLatencyDanceGameSDK::Impl {
     DeviceState* devices[MAX_PLAYERS] = {nullptr};
     InputCallback inputCallback;
+    void* user_data;
     bool initialized = false;
     std::atomic<bool> shutdown{false};
     std::unique_ptr<std::thread> usbThread;
@@ -91,7 +92,7 @@ struct LowLatencyDanceGameSDK::Impl {
         if (new_state != device->nonatomic_last_button_state) {
             device->last_button_state = new_state;
             if (inputCallback) {
-                inputCallback(static_cast<Player>(device->player), new_state);
+                inputCallback(static_cast<Player>(device->player), new_state, user_data);
             }
             device->nonatomic_last_button_state = new_state;
         }
@@ -326,12 +327,13 @@ LowLatencyDanceGameSDK::~LowLatencyDanceGameSDK() {
     }
 }
 
-bool LowLatencyDanceGameSDK::initialize(InputCallback callback) {
+bool LowLatencyDanceGameSDK::initialize(InputCallback callback, void* user_data) {
     if (pImpl->initialized) {
         return true;
     }
     
     pImpl->inputCallback = callback;
+    pImpl->user_data = user_data;
     pImpl->shutdown = false;
     
     if (g_libusb_ctx == nullptr) {

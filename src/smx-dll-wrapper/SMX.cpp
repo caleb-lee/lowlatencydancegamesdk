@@ -16,7 +16,7 @@ static mutex g_stateMutex;
 static SMXInfo g_info[LowLatencyDanceGameSDK::MAX_PLAYERS];
 
 // Input callback function that bridges from LLDGSDK to SMX API
-static void OnInputReceived(LowLatencyDanceGameSDK::Player player, uint16_t button_state)
+static void OnInputReceived(LowLatencyDanceGameSDK::Player player, uint16_t button_state, void* user_data)
 {
     int pad = static_cast<int>(player);
     
@@ -48,7 +48,7 @@ SMX_API void SMX_Start(SMXUpdateCallback callback, void *pUser)
 
     // Initialize the SDK with our input callback
     auto& sdk = LowLatencyDanceGameSDK::getInstance();
-    if (!sdk.initialize(OnInputReceived))
+    if (!sdk.initialize(OnInputReceived, nullptr))
         return;
     
     // Set up initial state

@@ -12,14 +12,14 @@ public:
         P2,
     };
     
-    using InputCallback = std::function<void(Player player, uint16_t button_state)>;
+    using InputCallback = void(*)(Player player, uint16_t button_state, void* user_data);
     
     static constexpr int MAX_PLAYERS = 2;
     static LowLatencyDanceGameSDK& getInstance();
 
     static bool isPadCompatible(uint16_t vendor_id, uint16_t product_id);
     
-    bool initialize(InputCallback callback);
+    bool initialize(InputCallback callback, void* user_data);
     void shutdown();
     
     bool isPlayerConnected(Player player);
