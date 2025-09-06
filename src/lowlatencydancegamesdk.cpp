@@ -13,9 +13,6 @@
 #include "adapters/SMXStage/SMXStageAdapter.h"
 #include "adapters/FoamPad/FoamPadAdapter.h"
 
-// Set Controller Adapter
-static struct DancePadAdapter s_default_adapter = default_smx_adapter();
-
 // Global libusb context for device management
 static libusb_context* g_libusb_ctx = nullptr;
 
@@ -41,6 +38,7 @@ struct DeviceState {
     std::atomic<uint16_t> last_button_state{0};
     unsigned char buffer[65];
     LowLatencyDanceGameSDK::Player player;
+    struct DancePadAdapter adapter;
     void* impl;
 };
 
@@ -66,7 +64,7 @@ struct LowLatencyDanceGameSDK::Impl {
         }
 
         // Parse out the input
-        uint16_t new_state = s_default_adapter.input_converter(device->buffer, transfer->actual_length);
+        uint16_t new_state = device->adapter.input_converter(device->buffer, transfer->actual_length);
 
         // If the input state is different from the last input state we received, call the callback
         if (new_state != device->nonatomic_last_button_state) {
@@ -146,7 +144,7 @@ struct LowLatencyDanceGameSDK::Impl {
         device->interrupt_in_endpoint = interrupt_in_endpoint;
         device->interrupt_out_endpoint = interrupt_out_endpoint;
         device->hid_interface = hid_interface;
-        DancePadAdapterPlayer player = s_default_adapter.get_player(handle, interrupt_in_endpoint, interrupt_out_endpoint);
+        DancePadAdapterPlayer player = device->adapter.get_player(handle, interrupt_in_endpoint, interrupt_out_endpoint);
         if (player != DancePadAdapterPlayerUnknown) {
             device->player = static_cast<Player>(player);
         }
@@ -200,7 +198,8 @@ struct LowLatencyDanceGameSDK::Impl {
                 continue;
             }
             
-            if (desc.idVendor != s_default_adapter.vendor_id || desc.idProduct != s_default_adapter.product_id) {
+            struct DancePadAdapter adapter = dance_pad_adapter_for(desc.idVendor, desc.idProduct);
+            if (!adapter.is_valid) {
                 continue;
             }
             
@@ -210,6 +209,7 @@ struct LowLatencyDanceGameSDK::Impl {
             }
             
             DeviceState* device_state = new DeviceState();
+            device_state->adapter = adapter;
             
             if (!setupDevice(handle, device_state)) {
                 delete device_state;

@@ -1,5 +1,8 @@
 #include "FoamPadAdapter.h"
 
+static const uint16_t g_vendor_id  = 0x0079;
+static const uint16_t g_product_id = 0x0011;
+
 uint16_t input_converter(uint8_t data[], int length) {
     if (length < 7) {
         return 0;
@@ -36,8 +39,8 @@ DancePadAdapterPlayer get_player(libusb_device_handle *handle, uint8_t interrupt
 extern struct DancePadAdapter default_foam_pad_adapter() {
     struct DancePadAdapter adapter;
 
-    adapter.vendor_id = 0x0079;
-    adapter.product_id = 0x0011;
+    adapter.vendor_id = g_vendor_id;
+    adapter.product_id = g_product_id;
     adapter.input_converter = input_converter;
     adapter.get_player = get_player;
     adapter.is_valid = true;
