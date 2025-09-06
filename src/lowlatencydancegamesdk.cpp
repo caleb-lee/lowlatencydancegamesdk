@@ -2,6 +2,7 @@
 #include <libusb.h>
 #include <thread>
 #include <atomic>
+#include <cassert>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -27,8 +28,25 @@ static void setThreadHighPriority() {
 #endif
 }
 
+// Returns true if device_a should come before device_b in USB ordering
+static bool compareUSBLocation(libusb_device* device_a, libusb_device* device_b) {
+    uint8_t bus_a = libusb_get_bus_number(device_a);
+    uint8_t bus_b = libusb_get_bus_number(device_b);
+    if (bus_a != bus_b) return bus_a < bus_b;
+    
+    uint8_t path_a[8], path_b[8];
+    int len_a = libusb_get_port_numbers(device_a, path_a, sizeof(path_a));
+    int len_b = libusb_get_port_numbers(device_b, path_b, sizeof(path_b));
+    
+    for (int i = 0; i < std::min(len_a, len_b); i++) {
+        if (path_a[i] != path_b[i]) return path_a[i] < path_b[i];
+    }
+    return len_a < len_b;
+}
+
 struct DeviceState {
     libusb_device_handle* handle = nullptr;
+    libusb_device* device = nullptr;
     libusb_transfer* transfer = nullptr;
     uint8_t interrupt_in_endpoint = 0;
     uint8_t interrupt_out_endpoint = 0;
@@ -37,7 +55,7 @@ struct DeviceState {
     uint16_t nonatomic_last_button_state = 0;
     std::atomic<uint16_t> last_button_state{0};
     unsigned char buffer[65];
-    LowLatencyDanceGameSDK::Player player;
+    DancePadAdapterPlayer player;
     struct DancePadAdapter adapter;
     void* impl;
 };
@@ -57,6 +75,9 @@ struct LowLatencyDanceGameSDK::Impl {
     void handleTransferComplete(libusb_transfer* transfer) {
         DeviceState *device = static_cast<DeviceState *>(transfer->user_data);
 
+        // Assert that we are within bounds of the `Player` enum before proceeding
+        assert(device->player >= 0 && device->player < MAX_PLAYERS);
+
         // Got an error; disconnect device and return without submitting another transfer
         if (transfer->status != LIBUSB_TRANSFER_COMPLETED && transfer->status != LIBUSB_TRANSFER_TIMED_OUT) {
             device->connected = false;
@@ -70,7 +91,7 @@ struct LowLatencyDanceGameSDK::Impl {
         if (new_state != device->nonatomic_last_button_state) {
             device->last_button_state = new_state;
             if (inputCallback) {
-                inputCallback(device->player, new_state);
+                inputCallback(static_cast<Player>(device->player), new_state);
             }
             device->nonatomic_last_button_state = new_state;
         }
@@ -144,14 +165,7 @@ struct LowLatencyDanceGameSDK::Impl {
         device->interrupt_in_endpoint = interrupt_in_endpoint;
         device->interrupt_out_endpoint = interrupt_out_endpoint;
         device->hid_interface = hid_interface;
-        DancePadAdapterPlayer player = device->adapter.get_player(handle, interrupt_in_endpoint, interrupt_out_endpoint);
-        if (player != DancePadAdapterPlayerUnknown) {
-            device->player = static_cast<Player>(player);
-        }
-        else {
-            //TODO: handle unknown players gracefully
-            device->player = Player::P1;
-        }
+        device->player = device->adapter.get_player(handle, interrupt_in_endpoint, interrupt_out_endpoint);
         device->connected = true;
         device->impl = this;
         
@@ -210,6 +224,7 @@ struct LowLatencyDanceGameSDK::Impl {
             
             DeviceState* device_state = new DeviceState();
             device_state->adapter = adapter;
+            device_state->device = device_list[i];
             
             if (!setupDevice(handle, device_state)) {
                 delete device_state;
@@ -217,20 +232,72 @@ struct LowLatencyDanceGameSDK::Impl {
                 continue;
             }
             
-            int player_idx = static_cast<int>(device_state->player);
-            if (player_idx >= 0 && player_idx < MAX_PLAYERS && !devices[player_idx]) {
-                devices[player_idx] = device_state;
-                found_devices++;
-            } else {
-                int fallback = (player_idx == 0) ? 1 : 0;
-                if (fallback < MAX_PLAYERS && !devices[fallback]) {
-                    device_state->player = static_cast<Player>(fallback);
-                    devices[fallback] = device_state;
-                    found_devices++;
-                } else {
-                    delete device_state;
-                    libusb_close(handle);
+            // Try to place device based on its preference
+            bool device_placed = false;
+            
+            if (device_state->player == DancePadAdapterPlayerUnknown) {
+                // Unknown device - place in first available slot
+                for (int slot = 0; slot < MAX_PLAYERS && !device_placed; slot++) {
+                    if (!devices[slot]) {
+                        devices[slot] = device_state;
+                        device_placed = true;
+                    }
                 }
+            } else {
+                // Known device - try preferred slot first
+                int preferred_slot = static_cast<int>(device_state->player);
+                
+                if (!devices[preferred_slot]) {
+                    // Preferred slot is free
+                    devices[preferred_slot] = device_state;
+                    device_placed = true;
+                    found_devices++;
+                } else if (devices[preferred_slot]->player == DancePadAdapterPlayerUnknown) {
+                    // Preferred slot has unknown device - move unknown to other slot
+                    int other_slot = (preferred_slot == 0) ? 1 : 0;
+                    if (!devices[other_slot]) {
+                        devices[other_slot] = devices[preferred_slot];
+                        devices[preferred_slot] = device_state;
+                        device_placed = true;
+                        found_devices++;
+                    }
+                } else {
+                    // Preferred slot has another known device - try other slot
+                    int fallback_slot = (preferred_slot == 0) ? 1 : 0;
+                    if (!devices[fallback_slot]) {
+                        device_state->player = static_cast<DancePadAdapterPlayer>(fallback_slot);
+                        devices[fallback_slot] = device_state;
+                        device_placed = true;
+                        found_devices++;
+                    }
+                }
+            }
+            
+            if (!device_placed) {
+                delete device_state;
+                libusb_close(handle);
+            }
+        }
+        
+        // If both devices are unknown, sort by USB port
+        if (devices[0] && devices[1] && 
+            devices[0]->player == DancePadAdapterPlayerUnknown &&
+            devices[1]->player == DancePadAdapterPlayerUnknown) {
+            
+            // If devices[0] should come after devices[1] in USB ordering, swap them
+            if (!compareUSBLocation(devices[0]->device, devices[1]->device)) {
+                DeviceState* temp = devices[0];
+                devices[0] = devices[1];
+                devices[1] = temp;
+            }
+        }
+        
+        // Assign final player values based on array position
+        for (int i = 0; i < MAX_PLAYERS; i++) {
+            if (devices[i]) {
+                devices[i]->player = static_cast<DancePadAdapterPlayer>(i);
+                devices[i]->device = nullptr;  // Invalidate after use
+                found_devices++;
             }
         }
         
