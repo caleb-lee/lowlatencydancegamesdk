@@ -9,10 +9,7 @@
 #include <pthread.h>
 #endif
 
-// Adapters
 #include "adapters/AdapterBase.h"
-#include "adapters/SMXStage/SMXStageAdapter.h"
-#include "adapters/FoamPad/FoamPadAdapter.h"
 
 // Global libusb context for device management
 static libusb_context* g_libusb_ctx = nullptr;
