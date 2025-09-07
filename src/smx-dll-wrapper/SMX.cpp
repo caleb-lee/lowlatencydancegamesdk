@@ -4,6 +4,9 @@
 
 #include "SMX.h"
 #include "../../include/lowlatencydancegamesdk.h"
+extern "C" {
+    #include "../adapters/AdapterBase.h"
+}
 
 using namespace std;
 
@@ -130,7 +133,7 @@ SMX_API uint16_t SMX_GetInputState(int pad)
         
     auto& sdk = LowLatencyDanceGameSDK::getInstance();
     LowLatencyDanceGameSDK::Player player = static_cast<LowLatencyDanceGameSDK::Player>(pad);
-    return sdk.getPlayerButtonState(player) & 0b0000000111111111; // mask to the first 9 bits as those are the only ones SMX.dll integrations expect
+    return sdk.getPlayerButtonState(player) & DancePadAdapterInputSMXDLLMask; // mask to expected bits for SMX.dll integrations
 }
 
 // Light functions - all no-ops

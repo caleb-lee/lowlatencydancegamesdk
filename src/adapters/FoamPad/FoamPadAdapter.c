@@ -31,18 +31,13 @@ uint16_t foam_input_converter(uint8_t data[], int length) {
     return (uint16_t)result;
 }
 
-DancePadAdapterPlayer foam_get_player(libusb_device_handle *handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint) {
-    // This foam pad doesn't have an in-built concept of P1/P2, so send back "unknown"
-    return DancePadAdapterPlayerUnknown;
-}
-
 extern struct DancePadAdapter default_foam_pad_adapter() {
     struct DancePadAdapter adapter;
 
     adapter.vendor_id = k_vendor_id;
     adapter.product_id = k_product_id;
     adapter.input_converter = foam_input_converter;
-    adapter.get_player = foam_get_player;
+    adapter.get_player = default_dance_pad_unknown_get_player; // This foam pad doesn't have an in-built concept of P1/P2, so send back "unknown"
     adapter.is_valid = true;
 
     return adapter;

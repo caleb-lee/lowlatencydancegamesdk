@@ -48,29 +48,15 @@ if(WIN32)
   
   # SMX.dll wrapper target (Windows only)
   # This creates a DLL with the stepmaniax-sdk interface that uses lldgsdk as backend
-  if(DEFINED LIBUSB_INCLUDE_DIR AND DEFINED LIBUSB_LIBRARY)
-      # Use external libusb
-      add_library(SMX SHARED
-          src/smx-dll-wrapper/SMX.cpp
-          src/lowlatencydancegamesdk.cpp
-          src/adapters/AdapterBase.c
-          src/adapters/SMXStage/SMXStageAdapter.c
-          src/adapters/FoamPad/FoamPadAdapter.c)
+  add_library(SMX SHARED
+    src/smx-dll-wrapper/SMX.cpp
+    src/lowlatencydancegamesdk.cpp
+    src/adapters/AdapterBase.c
+    src/adapters/SMXStage/SMXStageAdapter.c
+    src/adapters/FoamPad/FoamPadAdapter.c)
       
-      target_include_directories(SMX PRIVATE ${LIBUSB_INCLUDE_DIR})
-      target_link_libraries(SMX PRIVATE ${LIBUSB_LIBRARY})
-  else()
-      # Use built-in libusb
-      add_library(SMX SHARED
-          src/smx-dll-wrapper/SMX.cpp
-          src/lowlatencydancegamesdk.cpp
-          src/adapters/AdapterBase.c
-          src/adapters/SMXStage/SMXStageAdapter.c
-          src/adapters/FoamPad/FoamPadAdapter.c)
-      
-      target_include_directories(SMX PRIVATE extern/libusb/libusb/libusb)
-      target_link_libraries(SMX PRIVATE usb-1.0)
-  endif()
+  target_include_directories(SMX PRIVATE extern/libusb/libusb/libusb)
+  target_link_libraries(SMX PRIVATE usb-1.0)
   
   # SMX.dll specific settings
   target_include_directories(SMX PUBLIC src/smx-dll-wrapper include)

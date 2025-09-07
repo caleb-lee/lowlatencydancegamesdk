@@ -42,11 +42,16 @@ typedef enum {
 
     // Useful constants
     DancePadAdapterInputNone = 0,
-    DancePadAdapterInputSMXDLLMask = 0b0000000111111111,
+    DancePadAdapterInputSMXDLLMask = 
+        DancePadAdapterInputLeft | DancePadAdapterInputDown | DancePadAdapterInputUp | DancePadAdapterInputRight |
+        DancePadAdapterInputUpLeft | DancePadAdapterInputUpRight |
+        DancePadAdapterInputCenter |
+        DancePadAdapterInputDownLeft | DancePadAdapterInputDownRight,
 } DancePadAdapterInputEnum; typedef uint16_t DancePadAdapterInput;
 
 struct DancePadAdapter dance_pad_adapter_for(uint16_t vendor_id, uint16_t product_id);
 bool dance_pad_is_pid_vid_valid_pad(uint16_t vendor_id, uint16_t product_id);
+DancePadAdapterPlayer default_dance_pad_unknown_get_player(libusb_device_handle *handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint);
 
 #ifdef __cplusplus
 }

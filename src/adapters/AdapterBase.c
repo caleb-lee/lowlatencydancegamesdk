@@ -25,3 +25,8 @@ extern struct DancePadAdapter dance_pad_adapter_for(uint16_t vendor_id, uint16_t
 extern bool dance_pad_is_pid_vid_valid_pad(uint16_t vendor_id, uint16_t product_id) {
     return dance_pad_adapter_for(vendor_id, product_id).is_valid;
 }
+
+// Default adapter method for pads that don't have a concept of P1/P2 -- just send back "Unknown"
+extern DancePadAdapterPlayer default_dance_pad_unknown_get_player(libusb_device_handle *handle, uint8_t interrupt_in_endpoint, uint8_t interrupt_out_endpoint) {
+    return DancePadAdapterPlayerUnknown;
+}

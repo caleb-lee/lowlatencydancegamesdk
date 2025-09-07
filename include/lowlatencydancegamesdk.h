@@ -2,7 +2,6 @@
 #define LOWLATENCYDANCEGAMESDK_H
 
 #include <cstdint>
-#include <functional>
 #include <memory>
 
 class LowLatencyDanceGameSDK {

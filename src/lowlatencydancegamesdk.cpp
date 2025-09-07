@@ -253,25 +253,20 @@ struct LowLatencyDanceGameSDK::Impl {
             }
             // If P1 or Unknown, leave at slot 0
         } else if (devices[0] && devices[1]) {
-            // Sort devices: if either is unknown, use USB port order; otherwise use preferences
+            // Sort devices: if either is unknown, or if both are set to the same player, use USB port order; otherwise use pad preference
             bool has_unknown = (devices[0]->player == DancePadAdapterPlayerUnknown || 
                                devices[1]->player == DancePadAdapterPlayerUnknown);
+            bool is_same_player = devices[0]->player == devices[1]->player;
+
+            bool swapped_player_preferences = devices[0]->player == DancePadAdapterPlayer2 && devices[1]->player == DancePadAdapterPlayer1;
+            bool swapped_usb_preferences = (has_unknown || is_same_player) && !compareUSBLocation(devices[0]->device, devices[1]->device);
             
-            if (has_unknown) {
-                // Use USB port ordering
-                if (!compareUSBLocation(devices[0]->device, devices[1]->device)) {
-                    DeviceState* temp = devices[0];
-                    devices[0] = devices[1];
-                    devices[1] = temp;
-                }
-            } else {
-                // Both have preferences - honor them with conflict resolution
-                if (devices[0]->player == DancePadAdapterPlayer2 && devices[1]->player == DancePadAdapterPlayer1) {
-                    DeviceState* temp = devices[0];
-                    devices[0] = devices[1];
-                    devices[1] = temp;
-                }
-                // If both want same slot, first found wins (no swap needed)
+            bool should_swap = swapped_player_preferences || swapped_usb_preferences;
+            
+            if (should_swap) {
+                DeviceState* temp = devices[0];
+                devices[0] = devices[1];
+                devices[1] = temp;
             }
         }
         
